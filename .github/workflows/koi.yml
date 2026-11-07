@@ -20,6 +20,11 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Den aktuellen Stand des Branches holen, nicht den Commit, mit dem der Lauf
+          # gestartet wurde. Sonst scheitert ein "Re-run" am Push, weil der Koi von
+          # gestern schon neuer ist als dieser Commit.
+          ref: ${{ github.ref }}
 
       - name: Koi zeichnen
         env:
