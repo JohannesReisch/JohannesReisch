@@ -1,0 +1,23 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+.coverage
+htmlcov/
+
+# Geheimnisse
+.env
+.env.*
+
+# Editor, Werkzeuge
+.idea/
+.playwright-mcp/
+
+# Lokale Vorschauen, nur koi/koi.svg wird veröffentlicht
+koi/demo*.svg
+koi-vorschau.svg

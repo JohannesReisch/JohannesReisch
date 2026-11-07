@@ -1,0 +1,46 @@
+# Zeichnet jede Nacht den Koi neu und committet ihn, falls er sich verändert hat.
+# Läuft im Profil-Repo (<name>/<name>). Einzige fremde Action: actions/checkout
+# (offiziell von GitHub), auf einen Commit-Hash festgeschrieben, damit ein umgehängter
+# Tag keinen fremden Code einschleusen kann.
+name: Koi
+
+on:
+  schedule:
+    - cron: "15 4 * * *"   # täglich 04:15 UTC, nach Mitternacht auch in Deutschland
+  workflow_dispatch:        # manuell starten über den Actions-Tab
+
+permissions:
+  contents: write           # nur dieses Repo, nur zum Committen der SVG
+
+concurrency: koi
+
+jobs:
+  koi:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Koi zeichnen
+        env:
+          # KOI_TOKEN (Secret, nur lesend) sieht auch private Repos: Sprachfarben der
+          # privaten Arbeit. Fehlt er oder ist er abgelaufen, zeichnet der eingebaute Token
+          # mit öffentlichen Daten weiter und der Lauf zeigt eine Warnung.
+          KOI_TOKEN: ${{ secrets.KOI_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PYTHONPATH: src
+          KOI_USER: ${{ github.repository_owner }}
+        # Werte über env statt ${{ }} direkt im Skript: so kann kein Inhalt als Befehl laufen.
+        run: python3 -m koi_profil --user "$KOI_USER" --out koi/koi.svg --body white
+
+      - name: Committen, falls geändert
+        run: |
+          git add koi/koi.svg
+          if git diff --cached --quiet; then
+            echo "Koi unverändert."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "koi: Tagesbild aktualisiert"
+          git push
