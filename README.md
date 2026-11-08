@@ -1,14 +1,14 @@
 <!-- Profilseite von GitHub. Text oberhalb des Koi frei anpassen. -->
-## Hallo, ich bin Johannes 👋
+## Hallo, ich bin Johannes 
 
 Bauingenieur aus Dortmund mit einer Schwäche fürs Programmieren.
 
-- 🏗️ **Beruf:** Bauingenieur bei der **Assmann-Gruppe** in Dortmund, dort in der Entwicklung für
+-  **Beruf:** Bauingenieur bei der **Assmann-Gruppe** in Dortmund, dort in der Entwicklung für
   KI, Digitalisierung, Automatisierung und Programmentwicklung
-- 🎓 **Studium:** Bauingenieurwesen an der Hochschule Bochum, Bachelor und Master mit Schwerpunkt
+-  **Studium:** Bauingenieurwesen an der Hochschule Bochum, Bachelor und Master mit Schwerpunkt
   Bauinformatik, daher kommt meine Liebe zum Programmieren
-- 🎮 **Privat:** Spieleentwicklung, eigene Programme und Softwarelösungen
-- 🌱 **Antrieb:** mich stetig weiterentwickeln und Neues ausprobieren
+-  **Privat:** Spieleentwicklung, eigene Programme und Softwarelösungen
+-  **Antrieb:** mich stetig weiterentwickeln und Neues ausprobieren
 
 **Sprachen & Werkzeuge**
 
