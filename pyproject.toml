@@ -59,8 +59,8 @@ convention = "google"
 # Tests: assert ist dort richtig, Docstrings und Rückgabetypen wären Lärm.
 # S318: Tests parsen nur das selbst erzeugte SVG. S311: Zufall nur für Formen, nicht Sicherheit.
 "tests/**" = ["S101", "D", "ANN", "S318", "S311"]
-# random dient nur der Optik (Fleckenlage, Demo-Kalender), nicht der Sicherheit.
-"src/koi_profil/{render,demo}.py" = ["S311"]
+# random dient nur der Optik (Fleckenlage, Schwimmroute, Demo-Kalender), nicht der Sicherheit.
+"src/koi_profil/{render,demo,swim}.py" = ["S311"]
 
 [tool.pyright]
 include = ["src", "tests"]

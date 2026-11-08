@@ -1,16 +1,15 @@
-import math
 import os
 import re
 import subprocess
 import sys
 import xml.dom.minidom
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 
 from koi_profil.demo import SCENARIOS, demo_data
 from koi_profil.model import KoiData, Language
-from koi_profil.render import BODIES, SWIM_PATH, render_svg
+from koi_profil.render import BODIES, render_svg
 
 TODAY = date(2026, 11, 7)
 
@@ -80,19 +79,6 @@ def test_every_morph_animation_is_consistent():
         assert len({re.sub(r"[^A-Za-z]", "", f) for f in frames}) == 1
 
 
-def test_swim_path_has_no_kinks():
-    """Glatte Bahn: An jedem Knoten zeigen ein- und auslaufende Tangente in dieselbe Richtung."""
-    numbers = [float(n) for n in re.findall(r"-?\d+\.?\d*", SWIM_PATH)]
-    start, segments = numbers[:2], numbers[2:]
-    points = [segments[i : i + 6] for i in range(0, len(segments), 6)]
-    for i, (_, _, c2x, c2y, px, py) in enumerate(points):
-        nx, ny = points[(i + 1) % len(points)][:2]  # erster Kontrollpunkt des Folgesegments
-        incoming = math.atan2(py - c2y, px - c2x)
-        outgoing = math.atan2(ny - py, nx - px)
-        assert abs(math.remainder(incoming - outgoing, 2 * math.pi)) < math.radians(0.5)
-    assert (points[-1][4], points[-1][5]) == pytest.approx(tuple(start), abs=0.05)
-
-
 def test_same_svg_across_processes():
     """Gleiche Daten, gleiches Bild, auch in einem neuen Prozess mit anderem Hash-Seed.
 
@@ -117,3 +103,27 @@ def test_same_svg_across_processes():
         for seed in ("1", "2")
     }
     assert len(digests) == 1
+
+
+def test_koi_and_shadow_share_the_route():
+    """Schatten und Koi müssen dieselbe Bewegung machen, sonst trennen sie sich."""
+    svg = render_svg(demo_data("intensiv", TODAY))
+    # Nur die Route des Koi hat einen Zeitplan (keyTimes); das Blütenblatt treibt gleichmäßig.
+    motions = re.findall(r"<animateMotion[^>]*keyTimes[^>]*>", svg)
+    assert len(motions) == 2
+    assert motions[0] == motions[1]
+
+
+def test_busy_week_means_faster_koi_on_same_route():
+    """Mehr Contributions in der Woche: gleiche Route, kürzere Dauer."""
+    lazy = KoiData.build("x", {TODAY: 1}, [], TODAY)
+    busy = KoiData.build("x", {TODAY - timedelta(days=d): 5 for d in range(7)}, [], TODAY)
+
+    def motion(data: KoiData) -> tuple[str, float]:
+        tag = re.search(r'<animateMotion dur="([\d.]+)s"[^>]*path="([^"]+)"', render_svg(data))
+        assert tag is not None
+        return tag.group(2), float(tag.group(1))
+
+    (lazy_path, lazy_dur), (busy_path, busy_dur) = motion(lazy), motion(busy)
+    assert lazy_path == busy_path
+    assert busy_dur < lazy_dur

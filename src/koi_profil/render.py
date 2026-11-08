@@ -9,11 +9,10 @@ Wasseroberfläche (Ringe, Seerosen, Blütenblatt, Glitzern), Abdunklung der Rän
 """
 
 import hashlib
-import math
 import random
 from xml.sax.saxutils import escape
 
-from . import fish
+from . import fish, swim
 from .model import KoiData
 
 # Breitformat: füllt die Inhaltsbreite eines GitHub-READMEs (rund 840 px) ohne Skalierung.
@@ -31,32 +30,6 @@ BODIES = {
     "black": ("#2a2d33", "#5a5f6a"),
     "platinum": ("#e6e9ee", "#a9b0bb"),
 }
-
-# Rundkurs durch den Teich als glatte geschlossene Kurve durch diese Wegpunkte, ein langes
-# Oval mit leichten Wellen an den Längsseiten.
-# Glatt heißt: Die Richtung springt nirgends, sonst zuckt der Koi bei rotate="auto".
-SWIM_WAYPOINTS: tuple[fish.Point, ...] = (
-    (420, 72),
-    (560, 66),
-    (676, 92),
-    (712, 130),
-    (668, 168),
-    (540, 180),
-    (420, 170),
-    (300, 180),
-    (172, 168),
-    (128, 130),
-    (164, 92),
-    (280, 66),
-)
-SWIM_PATH = fish.smooth_closed(SWIM_WAYPOINTS)
-
-# `KoiData.swim_seconds` gilt für eine Runde dieser Länge (die Bahn im früheren, schmaleren
-# Teich). Längere Bahn = längere Runde, damit das Tempo des Koi gleich bleibt.
-REFERENCE_LAP = 570.0
-SWIM_LAP_FACTOR = (
-    sum(math.dist(SWIM_WAYPOINTS[i - 1], p) for i, p in enumerate(SWIM_WAYPOINTS)) / REFERENCE_LAP
-)
 
 TREND_ARROWS = {1: "↗ wächst", 0: "→ hält sich", -1: "↘ schrumpft"}
 FONT = "'Segoe UI', system-ui, -apple-system, Helvetica, Arial, sans-serif"
@@ -189,12 +162,11 @@ def _fish(data: KoiData, body: str) -> str:
 
 
 def _koi_layers(data: KoiData, body: str) -> tuple[str, str]:
-    """Liefert (defs, Szene) für Schatten und Koi, beide auf derselben Schwimmbahn."""
+    """Liefert (defs, Szene) für Schatten und Koi, beide auf derselben Schwimmroute."""
     defs = _fish_defs(body, data.tail_beat_seconds)
-    motion = (
-        f'<animateMotion dur="{data.swim_seconds * SWIM_LAP_FACTOR:.1f}s" repeatCount="indefinite" '
-        f'rotate="auto" path="{SWIM_PATH}"/>'
-    )
+    # Route je Benutzer fest, Tempo nach Aktivität der Woche
+    route = swim.Route.build(swim.plan_waypoints(_rng_for(data.login, "route")), data.swim_seconds)
+    motion = route.animate_motion()
     scene = (
         # Schatten am Teichgrund, leicht versetzt und unscharf
         f'<g transform="translate(8 11)" opacity="0.4" filter="url(#blur-4)"><g>{motion}'

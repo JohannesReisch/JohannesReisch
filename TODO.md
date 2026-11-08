@@ -6,6 +6,7 @@
 - Projekt nach Hausstandard (uv, ruff, Typprüfung strict, pytest, CI), Reviews eingearbeitet
 - Online: Repo `JohannesReisch/JohannesReisch` öffentlich, KOI_TOKEN als Secret,
   Workflows „Koi“ (täglich) und „Prüfen“ laufen grün
+- Schwimmroute statt fester Runde: umherziehen, ausruhen, am Rand verharren und wenden
 - Profil: README mit Vorstellung, Beruf, Studium und Sprachen; Bio, Firma, Ort, Pronomen gesetzt
 
 ## Offen

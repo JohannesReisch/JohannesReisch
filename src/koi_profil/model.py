@@ -193,7 +193,7 @@ class KoiData:
 
     @property
     def swim_seconds(self) -> float:
-        """Dauer einer Runde durch den Teich. Aktive Woche = schneller Koi."""
+        """Zeit für 570 px Strecke im Reisetempo (siehe `swim.py`). Aktive Woche = schneller Koi."""
         return 34.0 - 21.0 * self._busyness
 
     @property

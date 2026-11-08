@@ -17,6 +17,7 @@ Ein Workflow zeichnet ihn jede Nacht neu.
 | Commits der letzten 90 Tage je Repo × Sprachanteil im Repo | **Fleckenfarben** in GitHubs Sprachfarben, Fleckenzahl nach Anteil (bis 5 Sprachen, unter 5 % entfällt). Ohne Commits in 90 Tagen: das ganze Jahr. |
 | Contributions der letzten 7 Tage | Schwimmtempo |
 | Benutzername und Sprache | Lage der Flecken (je Sprache fest, neue Sprachen verschieben nichts) |
+| Benutzername | **Schwimmroute:** ein zwei- bis fünfminütiger Streifzug aus Umherziehen, kurzem Ausruhen und Abstechern an den Rand, wo der Koi verharrt und im engen Bogen wendet. Je Benutzer fest, damit das Bild nicht täglich ohne Grund wechselt. |
 
 Gezählt wird bis einschließlich **gestern** (UTC): Der Nachtlauf startet kurz nach
 Mitternacht, der angebrochene Tag wäre fast leer und ließe den Koi scheinbar schrumpfen.
@@ -149,6 +150,7 @@ src/koi_profil/
   github.py    GraphQL-Abfrage und Prüfung der Antwort
   model.py     Kalender und Sprachen -> Größe, Phase, Trend, Farben (ohne Ein-/Ausgabe)
   fish.py      Körperform, Flossen, Flecken als Schlüsselbilder einer Schwimmwelle
+  swim.py      Schwimmroute: Wegpunkte planen, prüfen, in Pfad und Zeitplan (SMIL) übersetzen
   render.py    Teichszene als animiertes SVG (SMIL, läuft in GitHub-READMEs, Skripte dort nicht)
   demo.py      erfundene Beispieldaten
   __main__.py  Kommandozeile, Token-Rückfall
