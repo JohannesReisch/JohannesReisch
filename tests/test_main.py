@@ -1,5 +1,6 @@
 """Kommandozeile und Token-Rückfall, ohne Netzwerk."""
 
+from collections.abc import Sequence
 from datetime import date
 from pathlib import Path
 
@@ -13,7 +14,7 @@ KOI = KoiData.build("jo", {date(2026, 11, 7): 1}, [], date(2026, 11, 7))
 
 
 def fake_fetch(valid: set[str], calls: list[str]):
-    def fetch(login: str, token: str) -> FetchResult:
+    def fetch(login: str, token: str, also_authors: Sequence[str] = ()) -> FetchResult:
         calls.append(token)
         if token not in valid:
             raise TokenRejectedError("abgelaufen")
@@ -76,9 +77,45 @@ def test_main_reports_error_with_exit_code(
 def test_partial_errors_become_warnings(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ):
-    def fetch(login: str, token: str) -> FetchResult:
+    def fetch(login: str, token: str, also_authors: Sequence[str] = ()) -> FetchResult:
         return FetchResult(KOI, ("Teilfehler: Repo X",))
 
     monkeypatch.setattr(cli, "fetch_koi_data", fetch)
     assert cli.fetch_with_fallback("jo", {"KOI_TOKEN": "k"}) is KOI
     assert "::warning::KOI_TOKEN: Teilfehler: Repo X" in capsys.readouterr().err
+
+
+def test_main_passes_extra_authors(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    seen: list[Sequence[str]] = []
+
+    def fetch(login: str, token: str, also_authors: Sequence[str] = ()) -> FetchResult:
+        seen.append(also_authors)
+        return FetchResult(KOI)
+
+    monkeypatch.setattr(cli, "fetch_koi_data", fetch)
+    monkeypatch.setenv("KOI_TOKEN", "k")
+    argv = ["--user", "jo", "--also-author", "zweit", "--also-author", "dritt"]
+    assert cli.main([*argv, "--out", str(tmp_path / "k.svg")]) == 0
+    assert seen == [["zweit", "dritt"]]
+
+
+@pytest.mark.parametrize("name", ["-jo", "jo/../x", "a" * 40, ""])
+def test_invalid_login_is_refused(
+    name: str,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+):
+    """Abgeschottet: Ließe der Prüfer den Namen durch, bricht der Fake ab statt der echten API."""
+
+    def fetch(login: str, token: str, also_authors: Sequence[str] = ()) -> FetchResult:
+        raise AssertionError("Name hätte abgewiesen werden müssen")
+
+    monkeypatch.setattr(cli, "fetch_koi_data", fetch)
+    monkeypatch.delenv("KOI_TOKEN", raising=False)
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    # "--also-author=NAME", damit auch "-jo" beim Namensprüfer landet und nicht als Option gilt.
+    argv = ["--user", "jo", f"--also-author={name}", "--out", str(tmp_path / "k.svg")]
+    with pytest.raises(SystemExit):
+        cli.main(argv)
+    assert "kein gültiger GitHub-Benutzername" in capsys.readouterr().err

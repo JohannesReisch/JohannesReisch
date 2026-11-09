@@ -14,7 +14,7 @@ Ein Workflow zeichnet ihn jede Nacht neu.
 | Contribution-Kalender der letzten 365 Tage | **Größe.** Jeder Tag zählt bis höchstens 3 Contributions („voll aktiv“), jüngere Tage stärker (Halbwertszeit 30 Tage). Regelmäßigkeit schlägt Masse. |
 | Veränderung gegenüber vor 7 Tagen | Beschriftung „↗ wächst“, „→ hält sich“, „↘ schrumpft“ |
 | Contributions der letzten 30 Tage | Zahl in der Beschriftung (passt zur Halbwertszeit: die Arbeit, die die Größe gerade prägt) |
-| Commits der letzten 90 Tage je Repo × Sprachanteil im Repo | **Fleckenfarben** in GitHubs Sprachfarben, Fleckenzahl nach Anteil (bis 5 Sprachen, unter 5 % entfällt). Ohne Commits in 90 Tagen: das ganze Jahr. |
+| Eigene Commits der letzten 90 Tage je Repo × Sprachanteil im Repo | **Fleckenfarben** in GitHubs Sprachfarben, Fleckenzahl nach Anteil (bis 5 Sprachen, unter 5 % entfällt). Ohne Commits in 90 Tagen: das ganze Jahr. Gezählt werden Commits auf dem Hauptzweig deiner Repos (ohne Forks), auch die eines Zweitkontos (`--also-author`). |
 | Contributions der letzten 7 Tage | Schwimmtempo |
 | Benutzername und Sprache | Lage der Flecken (je Sprache fest, neue Sprachen verschieben nichts) |
 | Benutzername | **Schwimmroute:** ein zwei- bis fünfminütiger Streifzug aus Umherziehen, kurzem Ausruhen und Abstechern an den Rand, wo der Koi verharrt und im engen Bogen wendet. Je Benutzer fest, damit das Bild nicht täglich ohne Grund wechselt. |
@@ -40,7 +40,9 @@ Alle Schwellenwerte stehen kommentiert oben in [`src/koi_profil/model.py`](../sr
 
 1. **Commit-Adresse prüfen:** GitHub rechnet einen Commit nur dann dir zu, wenn seine
    E-Mail-Adresse (`git config user.email`) in deinem Konto hinterlegt ist
-   (*Settings → Emails*). Das gilt auch für die Commits in deinen privaten Repos.
+   (*Settings → Emails*). Das gilt auch für die Commits in deinen privaten Repos und
+   für ein Zweitkonto (`--also-author`): Dort muss die Adresse in *dessen* Konto
+   hinterlegt sein, sonst zählen seine Commits still mit null.
 2. **Repo hochladen:** siehe [Hochladen](#hochladen).
 3. **KOI_TOKEN anlegen** (nötig, weil die Arbeit in privaten Repos liegt: der eingebaute
    Token des Workflows sieht nur Öffentliches):
@@ -54,10 +56,11 @@ Alle Schwellenwerte stehen kommentiert oben in [`src/koi_profil/model.py`](../sr
       Kalender eintragen.
    5. **Repository access:** **All repositories**. So zählen auch Repos, die du später
       anlegst.
-   6. **Permissions:** nichts hinzufügen. **Metadata: Read-only** ist automatisch dabei
-      und genügt für Sprachen und Contributions. Bei *Account permissions* bleibt alles
-      auf *No access*. Keinesfalls *Contents* vergeben: Dann könnte ein geleakter Token
-      deinen Code lesen.
+   6. **Permissions:** **Contents: Read-only** hinzufügen (**Metadata: Read-only** kommt
+      automatisch dazu). Contents braucht der Koi, um die Commit-Historie je Repo zu zählen;
+      GitHubs fertige Contribution-Liste verschweigt private Repos. Der Kompromiss: Ein
+      geleakter Token könnte deinen Code lesen, aber nichts ändern. Bei *Account
+      permissions* bleibt alles auf *No access*.
    7. **Generate token** → den Token (beginnt mit `github_pat_`) kopieren. GitHub zeigt
       ihn nur dieses eine Mal.
    8. Im Profil-Repo `JohannesReisch/JohannesReisch`: **Settings** → **Secrets and
@@ -67,10 +70,9 @@ Alle Schwellenwerte stehen kommentiert oben in [`src/koi_profil/model.py`](../sr
 4. **Erster Lauf:** *Actions → Koi → Run workflow*. Im Log steht z. B.
    `Koi gezeichnet: … | Jungkoi, Wachstum 49 %, … Contributions in 30 Tagen … | Sprachen: Python 54 %, C# 31 %`.
    Danach läuft er jede Nacht um 04:15 UTC. Eine gelbe Warnung „KOI_TOKEN abgelehnt“
-   heißt: Token falsch kopiert oder abgelaufen, also neu ausstellen. Bleiben die Sprachen
-   trotz Commits in privaten Repos leer, beim Token zusätzlich *Contents: Read-only*
-   vergeben (*Edit*, kein neuer Token nötig). Das ist der Kompromiss: Er sieht dann
-   auch den Code, kann aber nichts ändern.
+   heißt: Token falsch kopiert oder abgelaufen, also neu ausstellen. Fehlen Sprachen
+   privater Repos oder warnt der Lauf „Fehlt dem Token die Berechtigung „Contents: Read-only“?“, beim
+   Token *Contents: Read-only* ergänzen (*Edit*, kein neuer Token nötig).
 5. **Optional, nur für den Rückfall:** *Settings → Public profile → „Include private
    contributions on my profile“*. Dann zählt auch der eingebaute Token deine private
    Arbeit für die Größe. Achtung: Das zeigt den Kalender deiner privaten Arbeit (nur
@@ -87,8 +89,11 @@ auf einzelne Repos, wird mit dem Rest gezeichnet, ebenfalls mit Warnung.
   Sprachen samt Mengenverhältnis. Weil der Workflow das Bild täglich committet, ergibt die
   Git-Historie dazu eine öffentliche Zeitreihe (Größe, Jahreszahl, Schwimmtempo als Maß
   der Wochenaktivität). Repo-Namen, Code und Commit-Texte erscheinen nirgends.
-- **KOI_TOKEN** kann nur lesen und liegt als verschlüsseltes Secret im Repo. Workflows aus
-  fremden Pull Requests bekommen ihn nicht. Nur der nächtliche Koi-Lauf nutzt ihn.
+- **Zweitkonto:** Der Name hinter `--also-author` steht im öffentlichen Workflow
+  (`.github/workflows/koi.yml`). Damit ist für jeden sichtbar, dass beide Konten zusammengehören.
+- **KOI_TOKEN** kann nur lesen (Metadaten und Code) und liegt als verschlüsseltes Secret im
+  Repo. Workflows aus fremden Pull Requests bekommen ihn nicht. Nur der nächtliche
+  Koi-Lauf nutzt ihn.
 - **Eingebauter `GITHUB_TOKEN`** darf nur dieses Repo beschreiben, und der Workflow schreibt
   nur `koi/koi.svg`.
 - **Actions** sind auf Commit-Hashes festgeschrieben (`actions/checkout`, im Prüf-Workflow
@@ -123,7 +128,7 @@ gh repo create JohannesReisch/JohannesReisch --public --source . --remote origin
 
 Python 3.12 und [uv](https://docs.astral.sh/uv/). Zur Laufzeit nur Standardbibliothek,
 damit der nächtliche Workflow nichts installieren muss (deshalb `urllib` statt `httpx` und
-`dataclasses` statt Pydantic; die API-Antwort prüft `parse_response` Feld für Feld).
+`dataclasses` statt Pydantic; die API-Antworten prüfen die `parse_`-Funktionen in `github.py` Feld für Feld).
 
 ```powershell
 uv sync
@@ -134,16 +139,22 @@ start koi\demo.svg
 
 # Mit echten Daten (Token der GitHub CLI, nur lesend genutzt)
 $env:GITHUB_TOKEN = (gh auth token)
-uv run python -m koi_profil --user JohannesReisch --out koi\koi.svg
+uv run python -m koi_profil --user JohannesReisch --also-author reischassmann-boop --out koi\koi.svg
 
 # Prüfungen, alle vier müssen grün sein (laufen auch in CI)
 uv run ruff format --check
 uv run ruff check
-uv run pyright
+uv run pyright   # blockiert die Anwendungssteuerung node.exe im venv: siehe unten
 uv run pytest
 ```
 
-Optionen: `--body white|gold|black|platinum` (Grundfarbe), `--no-label` (ohne Beschriftung).
+Optionen: `--body white|gold|black|platinum` (Grundfarbe), `--no-label` (ohne Beschriftung), `--also-author NAME` (weiteres eigenes Konto, dessen Commits für die Sprachfarben mitzählen; mehrfach möglich).
+
+Blockiert die Windows-Anwendungssteuerung pyright (es startet eine `node.exe` aus dem venv), mit dem installierten Node prüfen:
+
+```powershell
+node .venv\Lib\site-packages\pyright\dist\index.js --pythonpath .venv\Scripts\python.exe
+```
 
 ```
 src/koi_profil/

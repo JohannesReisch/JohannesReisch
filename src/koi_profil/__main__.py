@@ -3,11 +3,11 @@
 import argparse
 import os
 import sys
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 from .demo import SCENARIOS, demo_data
-from .github import GitHubError, TokenRejectedError, fetch_koi_data
+from .github import LOGIN_PATTERN, GitHubError, TokenRejectedError, fetch_koi_data
 from .model import KoiData
 from .render import BODIES, render_svg
 
@@ -21,7 +21,16 @@ def _warn(message: str) -> None:
     print(f"::warning::{message}", file=sys.stderr)
 
 
-def fetch_with_fallback(login: str, env: Mapping[str, str]) -> KoiData:
+def _login(value: str) -> str:
+    """Argparse-Typ: lässt nur gültige GitHub-Benutzernamen durch."""
+    if not LOGIN_PATTERN.fullmatch(value):
+        raise argparse.ArgumentTypeError(f"kein gültiger GitHub-Benutzername: {value!r}")
+    return value
+
+
+def fetch_with_fallback(
+    login: str, env: Mapping[str, str], also_authors: Sequence[str] = ()
+) -> KoiData:
     """Fragt mit dem ersten gesetzten Token ab; lehnt GitHub ihn ab, mit dem nächsten.
 
     Grund: Ein abgelaufener KOI_TOKEN soll den Koi nicht anhalten. Er zeichnet dann mit
@@ -38,7 +47,7 @@ def fetch_with_fallback(login: str, env: Mapping[str, str]) -> KoiData:
         )
     for index, (name, token) in enumerate(tokens):
         try:
-            result = fetch_koi_data(login, token)
+            result = fetch_koi_data(login, token, also_authors)
         except TokenRejectedError as err:
             if index == len(tokens) - 1:
                 raise GitHubError(f"{name}: {err}") from err
@@ -53,7 +62,16 @@ def fetch_with_fallback(login: str, env: Mapping[str, str]) -> KoiData:
 def main(argv: list[str] | None = None) -> int:
     """Zeichnet den Koi und schreibt ihn als SVG; Rückgabe ist der Exit-Code."""
     parser = argparse.ArgumentParser(prog="koi_profil", description=__doc__)
-    parser.add_argument("--user", help="GitHub-Benutzername")
+    parser.add_argument("--user", type=_login, help="GitHub-Benutzername")
+    parser.add_argument(
+        "--also-author",
+        type=_login,
+        action="append",
+        default=[],
+        metavar="NAME",
+        help="Weiteres eigenes Konto, dessen Commits für die Sprachfarben mitzählen "
+        "(mehrfach möglich)",
+    )
     parser.add_argument("--out", default="koi/koi.svg", help="Zieldatei (Standard: koi/koi.svg)")
     parser.add_argument("--body", default="white", choices=sorted(BODIES), help="Grundfarbe")
     parser.add_argument("--no-label", action="store_true", help="Keine Beschriftung im Teich")
@@ -68,7 +86,7 @@ def main(argv: list[str] | None = None) -> int:
         if not args.user:
             parser.error("--user fehlt (oder --demo für Beispieldaten)")
         try:
-            data = fetch_with_fallback(args.user, os.environ)
+            data = fetch_with_fallback(args.user, os.environ, args.also_author)
         except GitHubError as err:
             print(f"Fehler: {err}", file=sys.stderr)
             return 1
